@@ -172,9 +172,11 @@ async function updateStatusBar() {
     const track = await spotifyApi.getCurrentTrack();
     spotifyViewProvider.updateTrack(track);
 
+    // Sempre permite abrir playlists se estiver autenticado
+    trackStatusBarItem.command = 'spotify-vscode.showPlaylists';
+
     if (track) {
         trackStatusBarItem.text = `$(note) ${track.name} - ${track.artist}`;
-        trackStatusBarItem.command = 'spotify-vscode.showPlaylists';
         playPauseButton.text = track.isPlaying ? '$(debug-pause)' : '$(play)';
         playPauseButton.command = track.isPlaying ? 'spotify-vscode.pause' : 'spotify-vscode.play';
         
