@@ -11,6 +11,10 @@ let prevButton: vscode.StatusBarItem;
 let nextButton: vscode.StatusBarItem;
 let pollTimer: NodeJS.Timeout | undefined;
 
+interface PlaylistQuickPickItem extends vscode.QuickPickItem {
+    uri: string;
+}
+
 export async function activate(context: vscode.ExtensionContext) {
     spotifyApi = new SpotifyApi(context);
     await spotifyApi.initialize();
@@ -93,6 +97,49 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('spotify-vscode.seek', async (positionMs: number) => {
             await spotifyApi.seek(positionMs);
             setTimeout(updateStatusBar, 500);
+        }),
+        vscode.commands.registerCommand('spotify-vscode.showPlaylists', async () => {
+            if (!spotifyApi.isAuthenticated()) {
+                vscode.commands.executeCommand('spotify-vscode.login');
+                return;
+            }
+
+            const playlists = await spotifyApi.getUserPlaylists() as PlaylistQuickPickItem[];
+            const selectedPlaylist = await vscode.window.showQuickPick(playlists, {
+                placeHolder: 'Select a playlist'
+            });
+
+            if (selectedPlaylist) {
+                const tracks = await spotifyApi.getPlaylistTracks(selectedPlaylist.uri) as PlaylistQuickPickItem[];
+                
+                // Opções da Playlist
+                const trackOptions: PlaylistQuickPickItem[] = [
+                    { label: '$(symbol-event) Aleatório', description: 'Shuffle this playlist', uri: 'shuffle' },
+                    ...tracks
+                ];
+
+                const selectedTrack = await vscode.window.showQuickPick(trackOptions, {
+                    placeHolder: `Tracks in ${selectedPlaylist.label}`
+                });
+
+                if (selectedTrack) {
+                    const allTrackUris = tracks.map(t => t.uri);
+
+                    if (selectedTrack.uri === 'shuffle') {
+                        await spotifyApi.setShuffle(true);
+                        await spotifyApi.playPlaylist(selectedPlaylist.uri, undefined, allTrackUris);
+                    } else {
+                        await spotifyApi.setShuffle(false);
+                        await spotifyApi.playPlaylist(selectedPlaylist.uri, selectedTrack.uri, allTrackUris);
+                    }
+                    setTimeout(updateStatusBar, 1000);
+                }
+            }
+        }),
+        vscode.commands.registerCommand('spotify-vscode.logout', async () => {
+            await spotifyApi.logout();
+            vscode.window.showInformationMessage('Spotify desconectado.');
+            updateStatusBar();
         })
     );
 
@@ -127,6 +174,7 @@ async function updateStatusBar() {
 
     if (track) {
         trackStatusBarItem.text = `$(note) ${track.name} - ${track.artist}`;
+        trackStatusBarItem.command = 'spotify-vscode.showPlaylists';
         playPauseButton.text = track.isPlaying ? '$(debug-pause)' : '$(play)';
         playPauseButton.command = track.isPlaying ? 'spotify-vscode.pause' : 'spotify-vscode.play';
         

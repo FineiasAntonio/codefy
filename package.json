@@ -43,6 +43,14 @@
       {
         "command": "spotify-vscode.previous",
         "title": "Spotify: Previous"
+      },
+      {
+        "command": "spotify-vscode.showPlaylists",
+        "title": "Spotify: Show Playlists"
+      },
+      {
+        "command": "spotify-vscode.logout",
+        "title": "Spotify: Logout"
       }
     ],
     "configuration": {
