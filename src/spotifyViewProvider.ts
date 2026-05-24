@@ -46,7 +46,8 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
             this._view.webview.postMessage({ 
                 type: 'updateConfig', 
                 color: config.get('progressBarColor'),
-                style: config.get('timebarStyle')
+                style: config.get('timebarStyle'),
+                enableBlur: config.get('enableBlurBackground')
             });
         }
     }
@@ -55,6 +56,7 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
         const config = vscode.workspace.getConfiguration('spotify-vscode');
         const barColor = config.get('progressBarColor', 'var(--vscode-button-background)');
         const timebarStyle = config.get('timebarStyle', 'standard');
+        const enableBlur = config.get('enableBlurBackground', false);
 
         // URI para o CSS do Codicon
         const codiconsUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'node_modules', '@vscode', 'codicons', 'dist', 'codicon.css'));
@@ -74,6 +76,23 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
                         font-family: var(--vscode-font-family);
                         color: var(--vscode-foreground);
                         --bar-color: ${barColor};
+                        overflow: hidden;
+                        height: 100vh;
+                        position: relative;
+                        background: transparent;
+                    }
+                    #bg-blur {
+                        position: fixed;
+                        top: -20px;
+                        left: -20px;
+                        right: -20px;
+                        bottom: -20px;
+                        background-size: cover;
+                        background-position: center;
+                        filter: blur(30px) brightness(0.4);
+                        z-index: -1;
+                        display: ${enableBlur ? 'block' : 'none'};
+                        transition: background-image 0.5s ease-in-out;
                     }
                     .album-art {
                         width: 100%;
@@ -85,10 +104,14 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
                         margin-bottom: 20px;
                         background-size: cover;
                         background-position: center;
+                        position: relative;
+                        z-index: 1;
                     }
                     .track-info {
                         text-align: center;
                         margin-bottom: 10px;
+                        position: relative;
+                        z-index: 1;
                     }
                     .track-name {
                         font-size: 1.2em;
@@ -110,6 +133,8 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
                         align-items: center;
                         gap: 10px;
                         margin-bottom: 15px;
+                        position: relative;
+                        z-index: 1;
                     }
                     .progress-bar-wrapper {
                         width: 100%;
@@ -141,7 +166,6 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
                         background-size: 100% 100%;
                     }
                     
-                    /* Invisibilizar bolinha no modo onda mas manter interativa */
                     body.style-wave .progress-bar::-webkit-slider-thumb {
                         -webkit-appearance: none;
                         width: 20px;
@@ -154,8 +178,6 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
                     body.style-standard .progress-bar {
                         height: 6px;
                         border-radius: 3px;
-                        -webkit-mask-image: none;
-                        mask-image: none;
                     }
                     body.style-standard .progress-bar::-webkit-slider-thumb {
                         -webkit-appearance: none;
@@ -172,7 +194,6 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
 
                     .progress-bar:focus {
                         outline: none;
-                        border: none;
                     }
                     
                     .time-info {
@@ -186,6 +207,8 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
                         display: flex;
                         gap: 20px;
                         align-items: center;
+                        position: relative;
+                        z-index: 1;
                     }
                     .control-btn {
                         background: none;
@@ -219,6 +242,7 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
                 </style>
             </head>
             <body class="style-${timebarStyle}">
+                <div id="bg-blur"></div>
                 <div id="art" class="album-art"></div>
                 <div class="track-info">
                     <div id="name" class="track-name">Spotify: Login</div>
@@ -314,6 +338,7 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
                                 document.getElementById('name').textContent = track.name;
                                 document.getElementById('artist').textContent = track.artist;
                                 document.getElementById('art').style.backgroundImage = \`url(\${track.albumArt})\`;
+                                document.getElementById('bg-blur').style.backgroundImage = \`url(\${track.albumArt})\`;
                                 isPlaying = track.isPlaying;
                                 currentProgress = track.progressMs || 0;
                                 duration = track.durationMs || 0;
@@ -327,6 +352,7 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
                                 document.getElementById('name').textContent = 'No track playing';
                                 document.getElementById('artist').textContent = '';
                                 document.getElementById('art').style.backgroundImage = '';
+                                document.getElementById('bg-blur').style.backgroundImage = '';
                                 document.getElementById('playPauseIcon').className = 'codicon codicon-play';
                                 isPlaying = false;
                                 updateProgressUI();
@@ -337,6 +363,9 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
                             if (message.style) {
                                 document.body.classList.remove('style-standard', 'style-wave');
                                 document.body.classList.add('style-' + message.style);
+                            }
+                            if (message.enableBlur !== undefined) {
+                                document.getElementById('bg-blur').style.display = message.enableBlur ? 'block' : 'none';
                             }
                             updateProgressUI();
                         }

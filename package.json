@@ -61,6 +61,11 @@
           ],
           "default": "standard",
           "description": "Estilo visual da barra de progresso na Sidebar."
+        },
+        "spotify-vscode.enableBlurBackground": {
+          "type": "boolean",
+          "default": false,
+          "description": "Habilita a capa do álbum como fundo desfocado na Sidebar."
         }
       }
     }

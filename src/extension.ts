@@ -103,7 +103,8 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(e => {
             if (e.affectsConfiguration('spotify-vscode.progressBarColor') || 
-                e.affectsConfiguration('spotify-vscode.timebarStyle')) {
+                e.affectsConfiguration('spotify-vscode.timebarStyle') ||
+                e.affectsConfiguration('spotify-vscode.enableBlurBackground')) {
                 spotifyViewProvider.updateConfig();
             }
         })
