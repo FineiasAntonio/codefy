@@ -15,7 +15,10 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
 
         webviewView.webview.options = {
             enableScripts: true,
-            localResourceRoots: [this._extensionUri]
+            localResourceRoots: [
+                this._extensionUri,
+                vscode.Uri.joinPath(this._extensionUri, 'node_modules', '@vscode', 'codicons', 'dist')
+            ]
         };
 
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
@@ -53,11 +56,15 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
         const barColor = config.get('progressBarColor', 'var(--vscode-button-background)');
         const timebarStyle = config.get('timebarStyle', 'standard');
 
+        // URI para o CSS do Codicon
+        const codiconsUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'node_modules', '@vscode', 'codicons', 'dist', 'codicon.css'));
+
         return `<!DOCTYPE html>
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link href="${codiconsUri}" rel="stylesheet" />
                 <style>
                     body {
                         display: flex;
@@ -124,7 +131,6 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
                     /* Estilo Onda */
                     body.style-wave .progress-bar {
                         height: 20px;
-                        /* Criando uma fita ondulada (curva em cima e embaixo) */
                         -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' preserveAspectRatio='none'%3E%3Cpath d='M0 10 Q 5 0 10 10 T 20 10 L 20 13 Q 15 23 10 13 T 0 13 Z' fill='black'/%3E%3C/svg%3E");
                         mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' preserveAspectRatio='none'%3E%3Cpath d='M0 10 Q 5 0 10 10 T 20 10 L 20 13 Q 15 23 10 13 T 0 13 Z' fill='black'/%3E%3C/svg%3E");
                         -webkit-mask-size: 30px 100%;
@@ -135,12 +141,13 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
                         background-size: 100% 100%;
                     }
                     
-                    /* Esconder bolinha no modo onda */
+                    /* Invisibilizar bolinha no modo onda mas manter interativa */
                     body.style-wave .progress-bar::-webkit-slider-thumb {
-                        display: none;
                         -webkit-appearance: none;
-                        width: 0;
-                        height: 0;
+                        width: 20px;
+                        height: 20px;
+                        background: transparent;
+                        cursor: pointer;
                     }
 
                     /* Estilo Padrão */
@@ -185,7 +192,6 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
                         border: none;
                         color: var(--vscode-foreground);
                         cursor: pointer;
-                        font-size: 1.5em;
                         padding: 10px;
                         border-radius: 50%;
                         transition: background 0.2s;
@@ -193,16 +199,22 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
                         align-items: center;
                         justify-content: center;
                     }
+                    .control-btn .codicon {
+                        font-size: 24px;
+                    }
                     .control-btn:hover {
                         background-color: var(--vscode-toolbar-hoverBackground);
                     }
                     .play-pause {
-                        font-size: 2em;
-                        background-color: var(--vscode-button-background);
-                        color: var(--vscode-button-foreground);
+                        background: none;
+                    }
+                    .play-pause .codicon {
+                        font-size: 32px;
                     }
                     .play-pause:hover {
-                        background-color: var(--vscode-button-hoverBackground);
+                        background: none;
+                        color: var(--vscode-button-background);
+                        transform: scale(1.1);
                     }
                 </style>
             </head>
@@ -227,9 +239,15 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
                 </div>
 
                 <div class="controls">
-                    <button class="control-btn" onclick="vscode.postMessage({type:'previous'})">⏮</button>
-                    <button id="playPause" class="control-btn play-pause" onclick="togglePlay()">▶</button>
-                    <button class="control-btn" onclick="vscode.postMessage({type:'next'})">⏭</button>
+                    <button class="control-btn" onclick="vscode.postMessage({type:'previous'})">
+                        <i class="codicon codicon-chevron-left"></i>
+                    </button>
+                    <button id="playPause" class="control-btn play-pause" onclick="togglePlay()">
+                        <i id="playPauseIcon" class="codicon codicon-play"></i>
+                    </button>
+                    <button class="control-btn" onclick="vscode.postMessage({type:'next'})">
+                        <i class="codicon codicon-chevron-right"></i>
+                    </button>
                 </div>
 
                 <script>
@@ -299,14 +317,17 @@ export class SpotifyViewProvider implements vscode.WebviewViewProvider {
                                 isPlaying = track.isPlaying;
                                 currentProgress = track.progressMs || 0;
                                 duration = track.durationMs || 0;
-                                document.getElementById('playPause').textContent = isPlaying ? '⏸' : '▶';
+                                
+                                const icon = document.getElementById('playPauseIcon');
+                                icon.className = 'codicon ' + (isPlaying ? 'codicon-debug-pause' : 'codicon-play');
+                                
                                 updateProgressUI();
                                 startTimer();
                             } else {
                                 document.getElementById('name').textContent = 'No track playing';
                                 document.getElementById('artist').textContent = '';
                                 document.getElementById('art').style.backgroundImage = '';
-                                document.getElementById('playPause').textContent = '▶';
+                                document.getElementById('playPauseIcon').className = 'codicon codicon-play';
                                 isPlaying = false;
                                 updateProgressUI();
                                 clearInterval(progressInterval);
