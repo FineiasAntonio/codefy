@@ -1,0 +1,88 @@
+{
+  "name": "spotify-vscode",
+  "displayName": "Spotify for VS Code",
+  "description": "Control Spotify directly from your VS Code Status Bar.",
+  "version": "0.0.1",
+  "publisher": "developer",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "type": "webview",
+          "id": "spotify-view",
+          "name": "Spotify Now Playing",
+          "visibility": "visible"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "spotify-vscode.login",
+        "title": "Spotify: Login"
+      },
+      {
+        "command": "spotify-vscode.play",
+        "title": "Spotify: Play"
+      },
+      {
+        "command": "spotify-vscode.pause",
+        "title": "Spotify: Pause"
+      },
+      {
+        "command": "spotify-vscode.next",
+        "title": "Spotify: Next"
+      },
+      {
+        "command": "spotify-vscode.previous",
+        "title": "Spotify: Previous"
+      }
+    ],
+    "configuration": {
+      "title": "Spotify for VS Code",
+      "properties": {
+        "spotify-vscode.progressBarColor": {
+          "type": "string",
+          "default": "var(--vscode-button-background)",
+          "description": "Cor da barra de progresso e da bolinha na Sidebar (aceita HEX, RGB ou cores do VS Code)."
+        },
+        "spotify-vscode.timebarStyle": {
+          "type": "string",
+          "enum": [
+            "standard",
+            "wave"
+          ],
+          "default": "standard",
+          "description": "Estilo visual da barra de progresso na Sidebar."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^6.1.1",
+    "@types/express": "^5.0.6",
+    "@types/node": "16.x",
+    "@types/vscode": "^1.75.0",
+    "typescript": "^4.9.5"
+  },
+  "dependencies": {
+    "axios": "^1.3.4",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  }
+}
